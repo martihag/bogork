@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<meta charset="utf-8"/>
+<title>Rust Web Chat</title>
+
+<script language="javascript" type="text/javascript">
+var wsUri = "ws://217.170.197.171:28255/ms"; //ip from playrust.io
+var output;
+
+function escapeHtml(str) {
+    return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+function writeToScreen(action, name, message, color) {
+  var date = new Date().toLocaleTimeString()
+  var pre = document.createElement("p");
+  var style = '"' + 'color: '+ color + ';">'
+  var formatMsg = '<span style='+style + '[' + date + '] ' + '<strong>' + escapeHtml(name) + '</strong>' + ' ' + action + ' ' + escapeHtml(message) + '</span>';
+
+  pre.style.wordWrap = "break-word";
+  pre.innerHTML = formatMsg;
+
+  output.appendChild(pre);
+  pre.scrollIntoView()
+}
+
+function connect() {
+    if (typeof WebSocket == "undefined") {
+        alert(_("Sorry, your browser does not support WebSockets. Idiot."));
+        return;
+    }
+    console.log("connecting to websocket ...");
+    output = document.getElementById("output");
+    var socket = connect.socket = new WebSocket(wsUri);
+    socket.onopen = function() {
+        console.log("connected to websocket");
+    }
+    socket.onmessage = function(e) {
+        var msg = e.data, cmd, data;
+        var p = msg.indexOf(" ");
+        if (p < 0) {
+            cmd = msg;
+            data = null;
+        } else {
+            cmd = msg.substring(0, p);
+            data = JSON.parse(msg.substring(p + 1));
+        }
+        switch (cmd) {
+        case "hello":
+            console.log("greeted by server");
+            socket.send("hello");
+            break;
+        case "player.chat":
+            console.log("received player spawn: " + data.id);
+            writeToScreen('says:', data.name, data.message, 'black')
+            break;
+        case "player.death":
+            console.log("received player death: " + data.id);
+            writeToScreen('died to', data.name, data.lastDamage, 'red')
+            break;
+        case "p":
+        case "h":
+        case "plane.drop":
+            break;
+        case "ping":
+            console.log("ping");
+            socket.send("pong");
+            break;
+        case "pong":
+            console.log("received pong");
+        default:
+            console.log("received unknown command: " + cmd);
+            break;
+        }
+    }
+
+    socket.onclose = function(e) {
+        console.log("disconnected from websocket (trying to reconnect in 20s)");
+        setTimeout(function() {
+            connect();
+        }, 20000);
+        delete connect.socket;
+        cleanup();
+    }
+    socket.onerror = function(e) {
+        console.log("websocket error: " + e.error);
+    }
+}
+
+window.addEventListener("load", connect, false);
+
+</script>
+
+<h2>BogOrk er best</h2>
+
+<div id="output"></div>
