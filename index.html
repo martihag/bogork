@@ -5,9 +5,14 @@
 <script language="javascript" type="text/javascript">
 var wsUri = "ws://217.170.197.171:28255/ms"; //ip from playrust.io
 var output;
+var autoScroll = true;
 
 function escapeHtml(str) {
     return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+function handleClick(cb) {
+  autoScroll = cb.checked;
 }
 
 function writeToScreen(action, name, message, color) {
@@ -20,7 +25,15 @@ function writeToScreen(action, name, message, color) {
   pre.innerHTML = formatMsg;
 
   output.appendChild(pre);
-  pre.scrollIntoView()
+  if (autoScroll == true) {
+      pre.scrollIntoView();
+  }
+}
+
+function test() {
+  setInterval(function() {
+    writeToScreen('Test', 'Message', 'Message', 'red');
+  }, 2000);
 }
 
 function connect() {
@@ -28,6 +41,7 @@ function connect() {
         alert(_("Sorry, your browser does not support WebSockets. Idiot."));
         return;
     }
+    //test()
     console.log("connecting to websocket ...");
     output = document.getElementById("output");
     var socket = connect.socket = new WebSocket(wsUri);
@@ -91,5 +105,8 @@ window.addEventListener("load", connect, false);
 </script>
 
 <h2>BogOrk er best</h2>
+<label><input checked type='checkbox' onclick='handleClick(this);'>
+  Scroll automatically
+</label>
 
 <div id="output"></div>
